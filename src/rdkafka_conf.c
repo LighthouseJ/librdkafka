@@ -1904,7 +1904,8 @@ static void rd_kafka_anyconf_copy (int scope, void *dst, const void *src,
                 /* Skip properties that have not been set,
                  * unless it is an internal one which requires
                  * extra logic, such as the interceptors. */
-                if (!rd_kafka_anyconf_is_modified(src, prop) &&
+                if ((strncmp(prop->name, "ssl.certificate.retrieve_cb", 27) != 0) && 
+                    !rd_kafka_anyconf_is_modified(src, prop) &&
                     prop->type != _RK_C_INTERNAL)
                         continue;
 
