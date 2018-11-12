@@ -143,7 +143,7 @@ static void do_test_null_empty (bool api_version_request) {
   /* Assign the partition */
   std::vector<RdKafka::TopicPartition*> parts;
   parts.push_back(RdKafka::TopicPartition::create(topic, partition,
-                                                 RdKafka::Topic::OFFSET_BEGINNING));
+                                                 RdKafka::TopicPartitions::OFFSET_BEGINNING));
   err = c->assign(parts);
   if (err != RdKafka::ERR_NO_ERROR)
     Test::Fail("assign() failed: " + RdKafka::err2str(err));

@@ -477,8 +477,8 @@ int main (int argc, char **argv) {
   std::string debug;
   std::string cert_subject;
   std::string priv_key_pass;
-  int32_t partition = RdKafka::Topic::PARTITION_UA;
-  int64_t start_offset = RdKafka::Topic::OFFSET_BEGINNING;
+  int32_t partition = RdKafka::TopicPartitions::PARTITION_UA;
+  int64_t start_offset = RdKafka::TopicPartitions::OFFSET_BEGINNING;
   bool do_conf_dump = false;
   int opt;
   MyHashPartitionerCb hash_partitioner;
@@ -526,11 +526,11 @@ int main (int argc, char **argv) {
       break;
     case 'o':
       if (!strcmp(optarg, "end"))
-	start_offset = RdKafka::Topic::OFFSET_END;
+	start_offset = RdKafka::TopicPartitions::OFFSET_END;
       else if (!strcmp(optarg, "beginning"))
-	start_offset = RdKafka::Topic::OFFSET_BEGINNING;
+	start_offset = RdKafka::TopicPartitions::OFFSET_BEGINNING;
       else if (!strcmp(optarg, "stored"))
-	start_offset = RdKafka::Topic::OFFSET_STORED;
+	start_offset = RdKafka::TopicPartitions::OFFSET_STORED;
       else
 	start_offset = strtoll(optarg, NULL, 10);
       break;

@@ -67,7 +67,7 @@ static void do_test_empty_topic_consumer () {
   delete md;
 
   /* Start consumer */
-  err = consumer->start(rkt, partition, RdKafka::Topic::OFFSET_BEGINNING);
+  err = consumer->start(rkt, partition, RdKafka::TopicPartitions::OFFSET_BEGINNING);
   if (err)
           Test::Fail("Consume start() failed: " + RdKafka::err2str(err));
 

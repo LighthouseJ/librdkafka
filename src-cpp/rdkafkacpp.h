@@ -65,7 +65,7 @@ typedef SSIZE_T ssize_t;
 #ifdef LIBRDKAFKA_STATICLIB
 #define RD_EXPORT
 #else
-#ifdef LIBRDKAFKACPP_EXPORTS
+#if LIBRDKAFKACPP_EXPORTS
 #define RD_EXPORT __declspec(dllexport)
 #else
 #define RD_EXPORT __declspec(dllimport)
@@ -1426,27 +1426,30 @@ public:
 };
 
 
+namespace TopicPartitions
+{
+    /**
+    * @brief Unassigned partition.
+    *
+    * The unassigned partition is used by the producer API for messages
+    * that should be partitioned using the configured or default partitioner.
+    */
+    RD_EXPORT extern const int32_t PARTITION_UA;
+
+    /** @brief Special offsets */
+    RD_EXPORT extern const int64_t OFFSET_BEGINNING; /**< Consume from beginning */
+    RD_EXPORT extern const int64_t OFFSET_END; /**< Consume from end */
+    RD_EXPORT extern const int64_t OFFSET_STORED; /**< Use offset storage */
+    RD_EXPORT extern const int64_t OFFSET_INVALID; /**< Invalid offset */
+}
+
 
 /**
  * @brief Topic handle
  *
  */
 class RD_EXPORT Topic {
- public:
-  /**
-   * @brief Unassigned partition.
-   *
-   * The unassigned partition is used by the producer API for messages
-   * that should be partitioned using the configured or default partitioner.
-   */
-  static const int32_t PARTITION_UA;
-
-  /** @brief Special offsets */
-  static const int64_t OFFSET_BEGINNING; /**< Consume from beginning */
-  static const int64_t OFFSET_END; /**< Consume from end */
-  static const int64_t OFFSET_STORED; /**< Use offset storage */
-  static const int64_t OFFSET_INVALID; /**< Invalid offset */
-
+public:
 
   /**
    * @brief Creates a new topic handle for topic named \p topic_str
