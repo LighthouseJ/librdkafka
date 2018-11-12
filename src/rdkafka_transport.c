@@ -710,7 +710,7 @@ int rd_kafka_transport_ssl_verify_broker_callback(X509_STORE_CTX *ctx, void *arg
     errstr[0] = '\0';
     rk = arg;
 
-#ifndef __mips__
+#if (!defined(__mips__)) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
     if(ctx)
         cert = ctx->cert;
 #endif
