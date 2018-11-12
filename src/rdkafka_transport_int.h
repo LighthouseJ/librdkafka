@@ -34,9 +34,11 @@
 #include "rdkafka_sasl.h"
 
 #if WITH_SSL
+#include <openssl/opensslv.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/pkcs12.h>
+#include <openssl/x509_vfy.h>
 #endif
 
 struct rd_kafka_transport_s {	
