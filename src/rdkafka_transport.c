@@ -961,80 +961,116 @@ int rd_kafka_transport_set_client_certificates(rd_kafka_t *rk,
             rd_kafka_dbg(rk, SECURITY, "SSL",
                 "Retrieved client's private key certificate %zu bytes",
                 len);
+			if (len == 1) // *buffer points to a prepared EVP_PKEY pointer loses efficacy when serialized to a buffer
+			{
+				rd_kafka_dbg(rk, SECURITY, "SSL",
+                        "Using an opaque EVP_PKEY pointer as the private key");
 
-            BIO* bio = BIO_new_mem_buf(buffer, (long)len);
-            if (bio) {
-                PKCS12 *p12 = d2i_PKCS12_bio(bio, NULL);
-                if (p12) {
-                    /*Get the private key password*/
-                    rd_kafka_dbg(rk, SECURITY, "SSL",
-                        "Calling callback to retrieve client's private key password");
-                    len = rk->rk_conf.ssl.ssl_cert_retrieve_cb(RD_KAFKA_CERTIFICATE_PRIVATE_KEY_PASS, &buffer, errbuf, sizeof(errbuf), rk->rk_conf.opaque);
-                    if (len != -1) {
-                        rd_kafka_dbg(rk, SECURITY, "SSL",
-                            "Retrieved client's private key password %zu bytes",
-                            len);
-                        EVP_PKEY* pkey;
-                        X509 *cert;
-                        STACK_OF(X509) *ca = NULL;
-                        if (!PKCS12_parse(p12, (const char*)buffer, &pkey, &cert, &ca)) {
-                            rd_snprintf(errstr, errstr_size,
-                                "Error reading PKCS#12");
+				EVP_PKEY * pkey = (EVP_PKEY *)buffer;
 
-                            PKCS12_free(p12);
-                            BIO_free(bio);
-                            EVP_PKEY_free(pkey);
-                            X509_free(cert);
-                            if (ca != NULL)
-                                sk_X509_pop_free(ca, X509_free);
+				r = SSL_CTX_use_PrivateKey(ctx, pkey);
+				EVP_PKEY_free(pkey);
 
-                            return -1;
-                        }
-                        else {
-                            if (ca != NULL)
-                                sk_X509_pop_free(ca, X509_free);
+				if (r != 1) {
+					PKCS12_free(p12);
+					BIO_free(bio);
 
-                            X509_free(cert);
+					return -1;
+				}
 
-                            rd_kafka_dbg(rk, SECURITY, "SSL",
-                                "Setting client private key");
+				rd_kafka_dbg(rk, SECURITY, "SSL",
+					"Checking client private key");
 
-                            r = SSL_CTX_use_PrivateKey(ctx, pkey);
-                            EVP_PKEY_free(pkey);
+				r = SSL_CTX_check_private_key(ctx);
+				if (r != 1) {
+					PKCS12_free(p12);
+					BIO_free(bio);
 
-                            if (r != 1) {
-                                PKCS12_free(p12);
-                                BIO_free(bio);
+					return -1;
+				}
+				
+				rd_kafka_dbg(rk, SECURITY, "SSL",
+					"Private key OK");
+			} // if (len == 1)
+			else // Assume the user passed a larger buffer and read normally
+			{
+				BIO* bio = BIO_new_mem_buf(buffer, (long)len);
+				if (bio) {
+					PKCS12 *p12 = d2i_PKCS12_bio(bio, NULL);
+					if (p12) {
+						/*Get the private key password*/
+						rd_kafka_dbg(rk, SECURITY, "SSL",
+							"Calling callback to retrieve client's private key password");
+						len = rk->rk_conf.ssl.ssl_cert_retrieve_cb(RD_KAFKA_CERTIFICATE_PRIVATE_KEY_PASS, &buffer, errbuf, sizeof(errbuf), rk->rk_conf.opaque);
+						if (len != -1) {
+							rd_kafka_dbg(rk, SECURITY, "SSL",
+								"Retrieved client's private key password %zu bytes",
+								len);
+							EVP_PKEY* pkey;
+							X509 *cert;
+							STACK_OF(X509) *ca = NULL;
+							if (!PKCS12_parse(p12, (const char*)buffer, &pkey, &cert, &ca)) {
+								rd_snprintf(errstr, errstr_size,
+									"Error reading PKCS#12");
 
-                                return -1;
-                            }
+								PKCS12_free(p12);
+								BIO_free(bio);
+								EVP_PKEY_free(pkey);
+								X509_free(cert);
+								if (ca != NULL)
+									sk_X509_pop_free(ca, X509_free);
 
-                            rd_kafka_dbg(rk, SECURITY, "SSL",
-                                "Checking client private key");
+								return -1;
+							}
+							else {
+								if (ca != NULL)
+									sk_X509_pop_free(ca, X509_free);
 
-                            r = SSL_CTX_check_private_key(ctx);
-                            if (r != 1) {
-                                PKCS12_free(p12);
-                                BIO_free(bio);
+								X509_free(cert);
 
-                                return -1;
-                            }
-                        }
-                    } else {
-                        rd_snprintf(errstr, errstr_size,
-                            "Callback failed to return valid private key password because of %s", errbuf);
-                        
-                        return -1;
-                        }
-                    PKCS12_free(p12);
-                } else
-                    rd_snprintf(errstr, errstr_size,
-                        "d2i_PKCS12_bio failed");
+								rd_kafka_dbg(rk, SECURITY, "SSL",
+									"Setting client private key");
 
-                BIO_free(bio);
-            } else
-                rd_snprintf(errstr, errstr_size,
-                    "Failed to initialize BIO");
+								r = SSL_CTX_use_PrivateKey(ctx, pkey);
+								EVP_PKEY_free(pkey);
+
+								if (r != 1) {
+									PKCS12_free(p12);
+									BIO_free(bio);
+
+									return -1;
+								}
+
+								rd_kafka_dbg(rk, SECURITY, "SSL",
+									"Checking client private key");
+
+								r = SSL_CTX_check_private_key(ctx);
+								if (r != 1) {
+									PKCS12_free(p12);
+									BIO_free(bio);
+
+									return -1;
+								}
+							}
+						} else {
+							rd_snprintf(errstr, errstr_size,
+								"Callback failed to return valid private key password because of %s", errbuf);
+							
+							return -1;
+							}
+						PKCS12_free(p12);
+					} else
+						rd_snprintf(errstr, errstr_size,
+							"d2i_PKCS12_bio failed");
+
+					BIO_free(bio);				
+				} // if (bio)
+				else
+				{
+					rd_snprintf(errstr, errstr_size,
+                    "Failed to initialize BIO");					
+				}
+            } // (else) (len != 1) 
         } else {
             rd_snprintf(errstr, errstr_size,
                 "Callback failed to return valid private key certificate because of %s", errbuf);
