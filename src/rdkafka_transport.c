@@ -969,7 +969,6 @@ int rd_kafka_transport_set_client_certificates(rd_kafka_t *rk,
 				EVP_PKEY * pkey = (EVP_PKEY *)buffer;
 
 				r = SSL_CTX_use_PrivateKey(ctx, pkey);
-				EVP_PKEY_free(pkey);
 
 				if (r != 1) {
 					return -1;
