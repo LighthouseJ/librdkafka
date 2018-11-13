@@ -972,9 +972,6 @@ int rd_kafka_transport_set_client_certificates(rd_kafka_t *rk,
 				EVP_PKEY_free(pkey);
 
 				if (r != 1) {
-					PKCS12_free(p12);
-					BIO_free(bio);
-
 					return -1;
 				}
 
@@ -983,9 +980,6 @@ int rd_kafka_transport_set_client_certificates(rd_kafka_t *rk,
 
 				r = SSL_CTX_check_private_key(ctx);
 				if (r != 1) {
-					PKCS12_free(p12);
-					BIO_free(bio);
-
 					return -1;
 				}
 				
